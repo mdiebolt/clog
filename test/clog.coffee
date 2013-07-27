@@ -3,9 +3,6 @@ assert = require 'assert'
 {clog} = require '../lib/clog'
 {nodes} = require 'coffee-script'
 
-isNumber = (number) ->
-  Object::toString.call(number) is '[object Number]'
-
 fixturePath = (name) ->
   "#{__dirname}/fixtures/#{name}"
 
@@ -61,10 +58,10 @@ describe 'Clog', ->
     it 'handles anonymous functions', ->
       output = clog.methods fixturePath("anonymous_functions.coffee")
 
-      # output numbers anonymous functions
-      # because there isn't another way to
-      # keep track of them
-      assert.equal output.anonymous1, 3
+      # we keep track of anonymous functions
+      # in a simple array because we can't
+      # identify them by name
+      assert.equal output.anonymous[0], 3
 
     it 'handles methods on CoffeeScript classes', ->
       output = clog.methods fixturePath("coffeescript_class.coffee")

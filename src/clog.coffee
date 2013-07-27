@@ -6,7 +6,11 @@ glob = require 'glob'
 
 BLANK_LINES = /^\s*$[\n\r]{1,}/gm
 
-anonymousId = 0
+merge = (object, properties) ->
+  for key, val of properties
+    object[key] = val
+
+  object
 
 # assume that coffee script classes
 # will only declare their classes
@@ -17,6 +21,7 @@ anonymousId = 0
 objectLiteralMethods = (objectsArray) ->
   methods = {}
 
+  # TODO skip keys whose values aren't functions
   objectsArray.forEach (obj, index) ->
     methodName = obj.variable.base.value
 
@@ -35,15 +40,6 @@ analyzeClass = (node) =>
 
   objectLiteralMethods(objects)
 
-getNode = (node, totalNodes=0) ->
-  node.expressions.forEach (n) ->
-    if (body = n.value?.body)?
-      getNode(body, totalNodes)
-
-    totalNodes += 1
-
-  return totalNodes
-
 eachExpression = (node, cb) ->
   node.expressions.forEach cb
 
@@ -51,59 +47,92 @@ eachProperty = (node, cb) ->
   node.properties.forEach cb
 
 getMethods = (node, output={}) ->
-  # if the first expression defines a class
-  # TODO make this more robust to be able to
-  # handle classes defined anywhere
-  if node.expressions[0]?.body?.classBody
-    analyzeClass(node)
-  else
-    # functions assigned to variables
-    eachExpression node, (exp) ->
-      # anon methods
-      if exp.params?
-        start = exp.locationData.first_line
-        end = exp.locationData.last_line
+  # functions assigned to variables
+  eachExpression node, (exp) ->
+    # anonymous methods
+    if exp.params?
+      start = exp.locationData.first_line
+      end = exp.locationData.last_line
 
-        anonymousId += 1
+      output["anonymous"] ||= []
+      output["anonymous"].push end - start
 
-        output["anonymous#{anonymousId}"] = end - start
+    # if this expression has params
+    # then it's a function. Analyze
+    # the method body length
+    if exp.value?.params?
+      start = exp.value.locationData.first_line
+      end = exp.value.locationData.last_line
 
-      if exp.value?.params?
-        start = exp.value.locationData.first_line
-        end = exp.value.locationData.last_line
+      output[exp.variable.base.value] = end - start
 
-        output[exp.variable.base.value] = end - start
+    # find object literal methods
+    if (objects = exp.value?.base?.objects)
+      methods = objectLiteralMethods(objects)
 
-      if (body = exp.value?.body)?
-        getMethods(body, output)
+      # merge the object literal
+      # properties with our output hash
+      merge(output, methods)
 
-      # find object literal methods
-      if (objects = exp.value?.base?.objects)
-        methods = objectLiteralMethods(objects)
+    # find coffee script class methods
+    if exp.body?.classBody
+      methods = analyzeClass(node)
 
-        for name, length of methods
-          output[name] = length
+      merge(output, methods)
 
-    output
+    # get nested nodes
+    if (body = exp.value?.body)?
+      getMethods(body, output)
+
+  output
+
+readFile = (path) ->
+  # get rid of newlines, in order to calculate method length more easily
+  fs.readFileSync(path, 'utf8').replace(BLANK_LINES, '')
 
 methods = (filePath) ->
-  # get rid of newlines, in order to calculate method length more easily
-  file = fs.readFileSync(filePath, 'utf8').replace(BLANK_LINES, '')
+  file = readFile(filePath)
 
-  tree = nodes(file)
+  getMethods(nodes(file))
 
-  getMethods(tree)
+###
+metric: churn
 
+a metric that indicates how many times a
+particular file has been changed. The more
+it has been changed, the better it's a
+candidate for refactoring since it probably
+does too many things
+###
 churn = (filePath, cb) ->
   # grep for commit since git whatchanged shows
   # multiple lines of details from each commit
   exec "git whatchanged #{filePath} | grep 'commit' | wc -l", cb
+#
+
+###
+metric: count nodes
+
+Simple proxy for complexity. The higher
+the number of nodes a file has, the more
+complex it is
+###
+getNode = (node, totalNodes=0) ->
+  node.expressions.forEach (n) ->
+    totalNodes += 1
+
+    if (body = n.value?.body)?
+      getNode(body, totalNodes)
+
+  totalNodes
 
 countNodes = (filePath) ->
-  tree = nodes(fs.readFileSync(filePath, 'utf8'))
+  file = readFile(filePath)
 
-  getNode(tree)
+  getNode(nodes(file))
+#
 
+# export public API
 exports.clog =
   churn: churn
   countNodes: countNodes
