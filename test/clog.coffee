@@ -6,6 +6,9 @@ assert = require 'assert'
 isNumber = (number) ->
   Object::toString.call(number) is '[object Number]'
 
+fixturePath = (name) ->
+  "#{__dirname}/fixtures/#{name}"
+
 describe 'Clog', ->
   describe '#churn', ->
     it 'is defined', ->
@@ -17,12 +20,12 @@ describe 'Clog', ->
 
         done()
 
-  describe '#nodes', ->
+  describe '#countNodes', ->
     it 'is defined', ->
       assert.ok clog.countNodes
 
     it 'counts nested nodes', ->
-      output = clog.countNodes "#{__dirname}/fixtures/functions.coffee"
+      output = clog.countNodes fixturePath("functions.coffee")
 
       assert.equal output, 3
 
@@ -31,14 +34,14 @@ describe 'Clog', ->
       assert.ok clog.methods
 
     it 'handles functions assigned to variables', ->
-      output = clog.methods("#{__dirname}/fixtures/functions.coffee")
+      output = clog.methods fixturePath("functions.coffee")
 
       assert.equal output.someFn, 1
       assert.equal output.anotherFn, 1
       assert.equal output.thirdFn, 1
 
     it 'handles nested function assignments', ->
-      output = clog.methods("#{__dirname}/fixtures/nested_functions.coffee")
+      output = clog.methods fixturePath("nested_functions.coffee")
 
       assert.equal output.aFn, 11
 
@@ -49,14 +52,24 @@ describe 'Clog', ->
       assert.equal output.superNestedFn, 5
 
     it 'handles functions in an object literal', ->
-      output = clog.methods("#{__dirname}/fixtures/object_literal_functions.coffee")
+      output = clog.methods fixturePath("object_literal_functions.coffee")
 
-      # TODO shortFn and mediumFn have 1 too many lines
-      assert.equal output.shortFn, 2
-      assert.equal output.mediumFn, 4
+      assert.equal output.shortFn, 1
+      assert.equal output.mediumFn, 3
       assert.equal output.longFn, 6
 
     it 'handles anonymous functions', ->
-      output = clog.methods("#{__dirname}/fixtures/anonymous_functions.coffee")
+      output = clog.methods fixturePath("anonymous_functions.coffee")
 
+      # output numbers anonymous functions
+      # because there isn't another way to
+      # keep track of them
       assert.equal output.anonymous1, 3
+
+    it 'handles methods on CoffeeScript classes', ->
+      output = clog.methods fixturePath("coffeescript_class.coffee")
+
+      assert.equal output.initialize, 2
+      assert.equal output.honk, 1
+      assert.equal output.drive, 2
+      assert.equal output.accelerate, 3

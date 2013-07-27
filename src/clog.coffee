@@ -8,6 +8,33 @@ BLANK_LINES = /^\s*$[\n\r]{1,}/gm
 
 anonymousId = 0
 
+# assume that coffee script classes
+# will only declare their classes
+# in the object literal style. In
+# this situation the class node will
+# have an object key that you can
+# analyze to determine method names
+objectLiteralMethods = (objectsArray) ->
+  methods = {}
+
+  objectsArray.forEach (obj, index) ->
+    methodName = obj.variable.base.value
+
+    # special case last method in an object
+    if index is objectsArray.length - 1
+      methodLength = (obj.locationData.last_line - obj.locationData.first_line)
+    else
+      methodLength = (obj.locationData.last_line - obj.locationData.first_line) - 1
+
+    methods[methodName] = methodLength
+
+  methods
+
+analyzeClass = (node) =>
+  objects = node.expressions[0].body.expressions[0].base.objects
+
+  objectLiteralMethods(objects)
+
 getNode = (node, totalNodes=0) ->
   node.expressions.forEach (n) ->
     if (body = n.value?.body)?
@@ -24,42 +51,43 @@ eachProperty = (node, cb) ->
   node.properties.forEach cb
 
 getMethods = (node, output={}) ->
-  # functions assigned to variables
-  eachExpression node, (exp) ->
-    # anon methods
-    if exp.params?
-      start = exp.locationData.first_line
-      end = exp.locationData.last_line
+  # if the first expression defines a class
+  # TODO make this more robust to be able to
+  # handle classes defined anywhere
+  if node.expressions[0]?.body?.classBody
+    analyzeClass(node)
+  else
+    # functions assigned to variables
+    eachExpression node, (exp) ->
+      # anon methods
+      if exp.params?
+        start = exp.locationData.first_line
+        end = exp.locationData.last_line
 
-      anonymousId += 1
+        anonymousId += 1
 
-      output["anonymous#{anonymousId}"] = end - start
+        output["anonymous#{anonymousId}"] = end - start
 
-    if exp.value?.params?
-      start = exp.value.locationData.first_line
-      end = exp.value.locationData.last_line
+      if exp.value?.params?
+        start = exp.value.locationData.first_line
+        end = exp.value.locationData.last_line
 
-      output[exp.variable.base.value] = end - start
+        output[exp.variable.base.value] = end - start
 
-    if (body = exp.value?.body)?
-      getMethods(body, output)
+      if (body = exp.value?.body)?
+        getMethods(body, output)
 
-    # find object literal methods
-    if exp.value?.base?.properties
-      exp.value?.base?.properties.forEach (property, index) ->
-        base = exp.value.base
+      # find object literal methods
+      if (objects = exp.value?.base?.objects)
+        methods = objectLiteralMethods(objects)
 
-        currentObject = base.objects[index]
+        for name, length of methods
+          output[name] = length
 
-        if property.value?.params?
-          start = property.locationData.first_line
-          end = property.locationData.last_line
-
-          output[currentObject.variable.base.value] = end - start
-
-  output
+    output
 
 methods = (filePath) ->
+  # get rid of newlines, in order to calculate method length more easily
   file = fs.readFileSync(filePath, 'utf8').replace(BLANK_LINES, '')
 
   tree = nodes(file)
