@@ -19,7 +19,7 @@ readFile = (path) ->
   fs.readFileSync(path, 'utf8').replace(BLANK_LINES, '')
 
 # assume that coffee script classes
-# will only declare their classes
+# will only declare their methods
 # in the object literal style. In
 # this situation the class node will
 # have an object key that you can
@@ -68,7 +68,17 @@ variableFunctions = (exp) ->
     start = exp.value.locationData.first_line
     end = exp.value.locationData.last_line
 
-    output[exp.variable.base.value] = end - start
+    end_col = exp.value.locationData.last_column
+    start_col = exp.value.locationData.first_column
+
+    length = end - start
+
+    # HACK: seems that nested functions report end columns
+    # that are less than their start columns. Use this
+    # fact to correct the off by one error that it causes
+    length -= 1 if end_col < start_col
+
+    output[exp.variable.base.value] = length
 
   output
 
@@ -83,25 +93,6 @@ classFunctions = (exp, parentNode) ->
 analyzeClass = (node) =>
   objectLiteralFunctions(node.expressions[0].body.expressions[0])
 
-# recursively counting expressions
-# will be much more reliable for
-# determining method length than
-# counting line numbers reported
-# from locationData. This way we
-# won't have to strip whitespace
-# from each file
-countExpressions = (node, count=1) ->
-  node.expressions.forEach (exp) ->
-    count += 1
-
-    if exp.expression
-      count += 1
-
-    if body = (exp.value?.body || exp.body)
-      count = countExpressions(body, count)
-
-  count
-
 nextNode = (exp, output) ->
   if body = exp.value?.body
     getMethods(body, output)
@@ -113,7 +104,7 @@ Name and length of each method.
 Methods with bodies longer than
 a specified value should be refactored
 ###
-getMethods = (node, output={}) ->
+getMethods = (node, output={}, nested=false) ->
   node.expressions.forEach (exp) ->
     merge(output, anonymousFunctions(exp))
     merge(output, variableFunctions(exp))
@@ -122,7 +113,7 @@ getMethods = (node, output={}) ->
 
     # pass the method output hash down so
     # the next node will have access to it
-    nextNode(exp, output)
+    nextNode(exp, output, nested)
 
   output
 

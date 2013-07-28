@@ -40,11 +40,8 @@ describe 'Clog', ->
     it 'handles nested function assignments', ->
       output = clog.methods fixturePath("nested_functions.coffee")
 
-      assert.equal output.aFn, 11
+      assert.equal output.aFn, 12
 
-      # TODO fix nested functions. The
-      # parser shows them ending on the
-      # line after their last statement
       assert.equal output.nestedFn, 9
       assert.equal output.superNestedFn, 5
 
