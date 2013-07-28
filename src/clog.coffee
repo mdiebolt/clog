@@ -12,97 +12,112 @@ merge = (object, properties) ->
 
   object
 
+# helper function. reads a file and strips out newlines
+readFile = (path) ->
+  # get rid of newlines, in order to calculate method length more easily
+  fs.readFileSync(path, 'utf8').replace(BLANK_LINES, '')
+
 # assume that coffee script classes
 # will only declare their classes
 # in the object literal style. In
 # this situation the class node will
 # have an object key that you can
 # analyze to determine method names
-objectLiteralMethods = (objectsArray) ->
+objectLiteralFunctions = (exp) ->
   methods = {}
 
   # TODO skip keys whose values aren't functions
-  objectsArray.forEach (obj, index) ->
-    methodName = obj.variable.base.value
+  if (objects = exp.value?.base?.objects || exp.base?.objects)
+    objects.forEach (obj, index) ->
+      methodName = obj.variable.base.value
 
-    # special case last method in an object
-    if index is objectsArray.length - 1
-      methodLength = (obj.locationData.last_line - obj.locationData.first_line)
-    else
-      methodLength = (obj.locationData.last_line - obj.locationData.first_line) - 1
+      end = obj.locationData.last_line
+      start = obj.locationData.first_line
 
-    methods[methodName] = methodLength
+      # special case last method in an object
+      if index is objects.length - 1
+        methodLength = end - start
+      else
+        methodLength = end - start - 1
+
+      methods[methodName] = methodLength
 
   methods
 
-analyzeClass = (node) =>
-  objects = node.expressions[0].body.expressions[0].base.objects
+anonymousFunctions = (exp) ->
+  output = {}
 
-  objectLiteralMethods(objects)
+  # anonymous methods
+  if exp.params?
+    start = exp.locationData.first_line
+    end = exp.locationData.last_line
 
-eachExpression = (node, cb) ->
-  node.expressions.forEach cb
-
-eachProperty = (node, cb) ->
-  node.properties.forEach cb
-
-getMethods = (node, output={}) ->
-  # functions assigned to variables
-  eachExpression node, (exp) ->
-    # anonymous methods
-    if exp.params?
-      start = exp.locationData.first_line
-      end = exp.locationData.last_line
-
-      output["anonymous"] ||= []
-      output["anonymous"].push end - start
-
-    # if this expression has params
-    # then it's a function. Analyze
-    # the method body length
-    if exp.value?.params?
-      start = exp.value.locationData.first_line
-      end = exp.value.locationData.last_line
-
-      output[exp.variable.base.value] = end - start
-
-    # find object literal methods
-    if (objects = exp.value?.base?.objects)
-      methods = objectLiteralMethods(objects)
-
-      # merge the object literal
-      # properties with our output hash
-      merge(output, methods)
-
-    # find coffee script class methods
-    if exp.body?.classBody
-      methods = analyzeClass(node)
-
-      merge(output, methods)
-
-    # get nested nodes
-    if (body = exp.value?.body)?
-      getMethods(body, output)
+    output["anonymous"] ||= []
+    output["anonymous"].push end - start
 
   output
 
-readFile = (path) ->
-  # get rid of newlines, in order to calculate method length more easily
-  fs.readFileSync(path, 'utf8').replace(BLANK_LINES, '')
+variableFunctions = (exp) ->
+  output = {}
+
+  # functions assigned to variables
+  if exp.value?.params?
+    start = exp.value.locationData.first_line
+    end = exp.value.locationData.last_line
+
+    output[exp.variable.base.value] = end - start
+
+  output
+
+classFunctions = (exp, parentNode) ->
+  output = {}
+
+  if exp.body?.classBody
+    output = analyzeClass(parentNode)
+
+  output
+
+analyzeClass = (node) =>
+  objectLiteralFunctions(node.expressions[0].body.expressions[0])
+
+nextNode = (exp, output) ->
+  if (body = exp.value?.body)
+    getMethods(body, output)
+
+###
+metric: method length
+
+Name and length of each method.
+Methods with bodies longer than
+a specified value should be refactored
+###
+getMethods = (node, output={}) ->
+  node.expressions.forEach (exp) ->
+    merge(output, anonymousFunctions(exp))
+    merge(output, variableFunctions(exp))
+    merge(output, objectLiteralFunctions(exp))
+    merge(output, classFunctions(exp, node))
+
+    # pass the method output hash down so
+    # the next node will have access to it
+    nextNode(exp, output)
+
+  output
 
 methods = (filePath) ->
   file = readFile(filePath)
 
   getMethods(nodes(file))
+#
 
 ###
 metric: churn
 
-a metric that indicates how many times a
-particular file has been changed. The more
-it has been changed, the better it's a
-candidate for refactoring since it probably
-does too many things
+Indicates how many times a
+file has been changed. The more
+it has been changed, the better a
+candidate it is for refactoring since
+it probably does too many things
 ###
 churn = (filePath, cb) ->
   # grep for commit since git whatchanged shows
