@@ -98,6 +98,42 @@ nextNode = (exp, output) ->
     getMethods(body, output)
 
 ###
+metric: complexity score
+
+A score that weights programming
+constructs according to difficulty
+to maintain. Files with a high
+score should be refactored to
+be more maintainable
+###
+scoreIfElse = (exp, nestedFactor=1, score=0) ->
+  if exp.condition
+    score += nestedFactor
+
+  if exp.elseBody
+    score += nestedFactor
+
+  if (expressions = exp.body?.expressions || exp.elseBody?.expressions)
+    expressions.forEach (exp) ->
+      nestedFactor = nestedFactor * 2
+
+      score = scoreIfElse(exp, nestedFactor, score)
+
+  score
+
+calculateScore = (node, score=0) ->
+  node.expressions.forEach (exp) ->
+    score += scoreIfElse(exp)
+
+  score
+
+score = (filePath) ->
+  file = readFile(filePath)
+
+  calculateScore(nodes(file))
+#
+
+###
 metric: method length
 
 Name and length of each method.
@@ -165,3 +201,4 @@ exports.clog =
   churn: churn
   countNodes: countNodes
   methods: methods
+  score: score
