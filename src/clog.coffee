@@ -1,4 +1,4 @@
-{spawn, exec} = require 'child_process'
+{exec} = require 'child_process'
 {nodes} = require 'coffee-script'
 
 fs = require 'fs'
@@ -12,7 +12,8 @@ merge = (object, properties) ->
 
   object
 
-# helper function. reads a file and strips out newlines
+# helper that reads a file sychronously
+# and strips out newlines
 readFile = (path) ->
   # get rid of newlines, in order to calculate method length more easily
   fs.readFileSync(path, 'utf8').replace(BLANK_LINES, '')
@@ -26,21 +27,23 @@ readFile = (path) ->
 objectLiteralFunctions = (exp) ->
   methods = {}
 
-  # TODO skip keys whose values aren't functions
   if (objects = exp.value?.base?.objects || exp.base?.objects)
     objects.forEach (obj, index) ->
-      methodName = obj.variable.base.value
+      # make sure this isn't
+      # just a property assignment
+      if obj.value.params?
+        methodName = obj.variable.base.value
 
-      end = obj.locationData.last_line
-      start = obj.locationData.first_line
+        end = obj.locationData.last_line
+        start = obj.locationData.first_line
 
-      # special case last method in an object
-      if index is objects.length - 1
-        methodLength = end - start
-      else
-        methodLength = end - start - 1
+        # special case last method in an object
+        if index is objects.length - 1
+          methodLength = end - start
+        else
+          methodLength = end - start - 1
 
-      methods[methodName] = methodLength
+        methods[methodName] = methodLength
 
   methods
 
@@ -80,8 +83,27 @@ classFunctions = (exp, parentNode) ->
 analyzeClass = (node) =>
   objectLiteralFunctions(node.expressions[0].body.expressions[0])
 
+# recursively counting expressions
+# will be much more reliable for
+# determining method length than
+# counting line numbers reported
+# from locationData. This way we
+# won't have to strip whitespace
+# from each file
+countExpressions = (node, count=1) ->
+  node.expressions.forEach (exp) ->
+    count += 1
+
+    if exp.expression
+      count += 1
+
+    if body = (exp.value?.body || exp.body)
+      count = countExpressions(body, count)
+
+  count
+
 nextNode = (exp, output) ->
-  if (body = exp.value?.body)
+  if body = exp.value?.body
     getMethods(body, output)
 
 ###
@@ -132,19 +154,19 @@ Simple proxy for complexity. The higher
 the number of nodes a file has, the more
 complex it is
 ###
-getNode = (node, totalNodes=0) ->
+accumulateNode = (node, totalNodes=0) ->
   node.expressions.forEach (n) ->
     totalNodes += 1
 
-    if (body = n.value?.body)?
-      getNode(body, totalNodes)
+    if body = n.value?.body
+      accumulateNode(body, totalNodes)
 
   totalNodes
 
 countNodes = (filePath) ->
   file = readFile(filePath)
 
-  getNode(nodes(file))
+  accumulateNode(nodes(file))
 #
 
 # export public API
@@ -152,12 +174,3 @@ exports.clog =
   churn: churn
   countNodes: countNodes
   methods: methods
-
-  # Go through all CoffeeScript files and apply
-  # each static analysis method.
-  # TODO: build up a JSON report of code score
-  run: ->
-    glob '**/*.coffee', (err, files) ->
-      files.forEach (file) ->
-        churn file, (err, output) ->
-          console.log output

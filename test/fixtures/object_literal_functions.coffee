@@ -9,6 +9,8 @@ obj =
 
     three()
 
+  justA: 'property'
+
   longFn: (should, nt, have, so, many, args) ->
     way()
     too()

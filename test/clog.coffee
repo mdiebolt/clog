@@ -53,6 +53,7 @@ describe 'Clog', ->
 
       assert.equal output.shortFn, 1
       assert.equal output.mediumFn, 3
+      assert.equal output.justA, undefined
       assert.equal output.longFn, 6
 
     it 'handles anonymous functions', ->
