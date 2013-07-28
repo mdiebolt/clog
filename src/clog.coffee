@@ -121,9 +121,21 @@ scoreIfElse = (exp, nestedFactor=1, score=0) ->
 
   score
 
+# TODO deal with nested cases
+scoreSwitch = (exp, nestedFactor=1, score=0) ->
+  if cases = exp.cases
+    cases.forEach (c) ->
+      score += 1
+
+  if exp.otherwise
+    score += 1
+
+  score
+
 calculateScore = (node, score=0) ->
   node.expressions.forEach (exp) ->
     score += scoreIfElse(exp)
+    score += scoreSwitch(exp)
 
   score
 

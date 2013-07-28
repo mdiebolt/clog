@@ -70,7 +70,12 @@ describe 'Clog', ->
       assert.equal output.accelerate, 3
 
   describe '#score', ->
-    it 'accounts for if statments', ->
+    it 'accounts for if statements', ->
       score = clog.score fixturePath("nested_ifs.coffee")
 
       assert.equal score, 5
+
+    it 'accounts for case / switch statements', ->
+      score = clog.score fixturePath("case.coffee")
+
+      assert.equal score, 3
