@@ -79,3 +79,8 @@ describe 'Clog', ->
       score = clog.score fixturePath("case.coffee")
 
       assert.equal score, 3
+
+    it 'accounts for eval', ->
+      score = clog.score fixturePath("eval.coffee")
+
+      assert.equal score, 25

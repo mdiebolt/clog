@@ -132,10 +132,17 @@ scoreSwitch = (exp, nestedFactor=1, score=0) ->
 
   score
 
+scoreEval = (exp, score=0) ->
+  if base = exp.variable?.base
+    score += 25 if base.value is 'eval'
+
+  score
+
 calculateScore = (node, score=0) ->
   node.expressions.forEach (exp) ->
     score += scoreIfElse(exp)
     score += scoreSwitch(exp)
+    score += scoreEval(exp)
 
   score
 
