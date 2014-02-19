@@ -2,7 +2,7 @@
 
 A simple static analysis tool for CoffeeScript source code.
 Leverages CoffeeScript compiler, walking over all tokens
-in a file and weighting the code based on a number of heuristics
+in a file and weighing the code based on a number of heuristics
 corresponding to the token type.
 
     execSync = require "execSync"
@@ -26,12 +26,13 @@ it has been changed, the better a candidate it is for refactoring.
 Grep for commit since git whatchanged shows
 multiple lines of details from each commit.
 
-      output = execSync.exec "git whatchanged #{filePath} | grep 'commit' | wc -l"
+      command = "git whatchanged #{filePath} | grep 'commit' | wc -l"
+      output = execSync.exec command
       parseInt(output.stdout, 10)
 
 ## Metric: Token score
 
-Determines how complex code is by weighting each token
+Determines how complex code is by weighing each token
 based on maintainability. Using tokens is style agnostic
 and won't change based on comment / documentation style,
 or from personal whitespace style.
@@ -41,21 +42,21 @@ or from personal whitespace style.
 
       tokens(file).reduce (sum, token) ->
         type = token[0]
-
         sum + (rules[type] || 0)
       , 0
 
 Output scores per file.
 
-    report = (filePaths...) ->
+    report = (filePaths) ->
       filePaths.reduce (hash, file) ->
         hash[file] = score(file)
         hash
       , {}
 
-Export public API
+Export public API.
 
     exports.clog =
       churn: churn
       score: score
       report: report
+      version: "0.0.1"

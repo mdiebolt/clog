@@ -20,7 +20,7 @@ describe "Clog", ->
       cases = fixturePath("case")
       ifs = fixturePath("nested_ifs")
 
-      scores = clog.report(cases, ifs)
+      scores = clog.report([cases, ifs])
 
       assert.equal(scores[cases], 29)
       assert.equal(scores[ifs], 22)

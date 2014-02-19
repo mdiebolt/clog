@@ -1,0 +1,19 @@
+{
+  "author": "Matt Diebolt",
+  "name": "clog",
+  "description": "Simple CoffeeScript static analysis for code quality metrics",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mdiebolt/clog.git"
+  },
+  "main": "./lib/clog.js",
+  "bin": {
+    "clog": "./bin/clog"
+  },
+  "dependencies": {
+    "coffee-script": "~1.7.1",
+    "execSync": "~1.0.1",
+    "minimist": "0.0.7"
+  },
+}

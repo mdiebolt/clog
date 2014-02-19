@@ -1,0 +1,14 @@
+#!/usr/bin/env node
+
+var clog = require("../lib/clog").clog;
+var argv = require("minimist")(process.argv.slice(2));
+
+if (argv["h"] || argv["help"]) {
+  console.log("\nUsage: clog path/to/file1.coffee path/to/file2.coffee");
+  console.log("\n-h, --help       display this help message");
+  console.log("-v, --version    display the version number")
+} else if (argv["v"] || argv["version"]) {
+  console.log(clog.version);
+} else {
+  console.log(clog.report(argv._));
+}
