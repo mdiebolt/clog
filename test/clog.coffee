@@ -22,5 +22,5 @@ describe "Clog", ->
 
       scores = clog.report([cases, ifs])
 
-      assert.equal(scores[cases], 29)
-      assert.equal(scores[ifs], 22)
+      assert.equal(scores[cases].complexity, 29)
+      assert.equal(scores[ifs].complexity, 22)
