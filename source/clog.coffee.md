@@ -21,7 +21,7 @@ Helper to read a file in utf-8.
 Indicates how many times a file has been changed. The more
 it has been changed, the better a candidate it is for refactoring.
 
-    churn = (filePath, cb) ->
+    churn = (filePath) ->
 
 Grep for commit since git whatchanged shows
 multiple lines of details from each commit.
@@ -49,7 +49,10 @@ Output scores per file.
 
     report = (filePaths) ->
       filePaths.reduce (hash, file) ->
-        hash[file] = score(file)
+        hash[file] =
+          churn: churn(file)
+          complexity: score(file)
+
         hash
       , {}
 
@@ -59,4 +62,4 @@ Export public API.
       churn: churn
       score: score
       report: report
-      VERSION: "0.0.3"
+      VERSION: "0.0.6"
