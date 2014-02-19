@@ -59,4 +59,4 @@ Export public API.
       churn: churn
       score: score
       report: report
-      version: "0.0.1"
+      VERSION: "0.0.3"

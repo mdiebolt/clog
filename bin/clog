@@ -8,7 +8,7 @@ if (argv["h"] || argv["help"]) {
   console.log("\n-h, --help       display this help message");
   console.log("-v, --version    display the version number")
 } else if (argv["v"] || argv["version"]) {
-  console.log(clog.version);
+  console.log(clog.VERSION);
 } else {
   console.log(clog.report(argv._));
 }
