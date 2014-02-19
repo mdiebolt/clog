@@ -1,1 +1,1 @@
-npm install -g clog
+npm install -g clog-analysis
