@@ -59,9 +59,8 @@ or directories passed in.
         if stats.isFile()
           list.push path
         else if stats.isDirectory()
-          list = list.concat(glob.sync "#{path}/**/*.coffee")
-          list = list.concat(glob.sync "#{path}/**/*.coffee.md")
-          list = list.concat(glob.sync "#{path}/**/*.litcoffee")
+          pattern = "#{path}/**/*.+(coffee|coffee\.md|\.litcoffee)"
+          list = list.concat(glob.sync pattern)
 
         list
       , []
@@ -83,4 +82,4 @@ Export public API.
       churn: churn
       score: score
       report: report
-      VERSION: "0.0.7"
+      VERSION: "0.0.8"
