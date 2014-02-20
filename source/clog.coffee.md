@@ -5,7 +5,7 @@ Leverages CoffeeScript compiler, walking over all tokens
 in a file and weighing the code based on a number of heuristics
 corresponding to the token type.
 
-    execSync = require "execSync"
+    execSync = require "exec-sync"
     {tokens} = require "coffee-script"
     {rules} = require "../lib/rules"
 
@@ -28,8 +28,8 @@ Grep for commit since git whatchanged shows
 multiple lines of details from each commit.
 
       command = "git whatchanged #{filePath} | grep 'commit' | wc -l"
-      output = execSync.exec command
-      parseInt(output.stdout, 10)
+      output = execSync command
+      parseInt(output, 10)
 
 ## Metric: Token score
 
