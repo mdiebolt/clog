@@ -10,6 +10,7 @@ corresponding to the token type.
     {rules} = require "../lib/rules"
 
     fs = require "fs"
+    glob = require "glob"
 
 Helper to read a file in utf-8.
 
@@ -38,17 +39,37 @@ and won't change based on comment / documentation style,
 or from personal whitespace style.
 
     score = (filePath) ->
+      literate = /\.litcoffee|\.coffee\.md/.test(filePath)
       file = read(filePath)
 
-      tokens(file).reduce (sum, token) ->
+      tokens(file, literate: literate).reduce (sum, token) ->
         type = token[0]
         sum + (rules[type] || 0)
       , 0
 
+Return an array of CoffeeScript files based on file filePaths
+or directories passed in.
+
+    files = (paths) ->
+      paths.reduce (list, path) ->
+        # get stats on the path in order to determine
+        # if we have a directory or a file.
+        stats = fs.lstatSync(path)
+
+        if stats.isFile()
+          list.push path
+        else if stats.isDirectory()
+          list = list.concat(glob.sync "#{path}/**/*.coffee")
+          list = list.concat(glob.sync "#{path}/**/*.coffee.md")
+          list = list.concat(glob.sync "#{path}/**/*.litcoffee")
+
+        list
+      , []
+
 Output scores per file.
 
     report = (filePaths) ->
-      filePaths.reduce (hash, file) ->
+      files(filePaths).reduce (hash, file) ->
         hash[file] =
           churn: churn(file)
           complexity: score(file)
@@ -62,4 +83,4 @@ Export public API.
       churn: churn
       score: score
       report: report
-      VERSION: "0.0.6"
+      VERSION: "0.0.7"
