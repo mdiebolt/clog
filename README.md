@@ -1,14 +1,16 @@
 # Clog
 
-CoffeeScript static analysis for code quality metrics. Inspired by flog for Ruby.
+CoffeeScript static analysis for code quality metrics. Inspired by flog for Ruby. Runs as a CLI, generating a report describing churn and complexity of each file or directory passed to it.
 
 ## Installation
 
-npm install -g clog-analysis
+`npm install -g clog-analysis`
 
 ## Usage
 
-`clog path/to/file1.coffee path/to/file2.coffee`
+`clog path/to/file1.coffee path/to/file2.coffee my/dir`
+
+Generates a report of churn and complexity for `file1.coffee`, `file2.coffee`, and all `.coffee`, `.coffee.md`, and `.litcoffee` files inside `my/dir` or any of its subdirectories.
 
 ## Contributing
 
