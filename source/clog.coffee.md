@@ -17,6 +17,12 @@ Helper to read a file in utf-8.
     read = (path) ->
       fs.readFileSync(path, "utf8")
 
+Helper to determine if filePath represents
+a literate Coffee file.
+
+    isLiterate = (path) ->
+      /\.litcoffee|\.coffee\.md/i.test(path)
+
 ## Metric: Churn
 
 Indicates how many times a file has been changed. The more
@@ -31,6 +37,18 @@ multiple lines of details from each commit.
       output = execSync command
       parseInt(output, 10)
 
+## Metric: Token count
+
+The number of tokens in the file. Used in conjunction with
+token score to determine average complexity per token.
+
+    count = (filePath) ->
+      file = read(filePath)
+
+      tokens file,
+        literate: isLiterate(filePath)
+      .length
+
 ## Metric: Token score
 
 Determines how complex code is by weighing each token
@@ -39,13 +57,24 @@ and won't change based on comment / documentation style,
 or from personal whitespace style.
 
     score = (filePath) ->
-      literate = /\.litcoffee|\.coffee\.md/.test(filePath)
       file = read(filePath)
 
-      tokens(file, literate: literate).reduce (sum, token) ->
+      tokens file,
+        literate: isLiterate(filePath)
+      .reduce (sum, token) ->
         type = token[0]
         sum + (rules[type] || 0)
       , 0
+
+## Metric: Complexity per token
+
+Represents the average complexity of each token in the file.
+
+    averageComplexity = (filePath) ->
+      tokenCount = count(filePath)
+      return 0 if tokenCount is 0
+
+      score(filePath) / tokenCount
 
 Return an array of CoffeeScript files based on file filePaths
 or directories passed in.
@@ -59,7 +88,7 @@ or directories passed in.
         if stats.isFile()
           list.push path
         else if stats.isDirectory()
-          pattern = "#{path}/**/*.+(coffee|coffee\.md|litcoffee)"
+          pattern = "#{path}/**/*\.+(coffee|coffee\.md|litcoffee)"
           list = list.concat(glob.sync pattern)
 
         list
@@ -68,13 +97,15 @@ or directories passed in.
 Output scores per file.
 
     report = (filePaths) ->
-      files(filePaths).reduce (hash, file) ->
+      JSON.stringify(files(filePaths).reduce (hash, file) ->
         hash[file] =
+          averageComplexity: averageComplexity(file)
           churn: churn(file)
           complexity: score(file)
+          tokenCount: count(file)
 
         hash
-      , {}
+      , {})
 
 Export public API.
 
