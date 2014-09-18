@@ -15,12 +15,8 @@ describe "Clog", ->
   describe "#report", ->
     cases = fixturePath("case")
     ifs = fixturePath("nested_ifs")
-    methods = fixturePath("methods")
 
-    scores = JSON.parse clog.report [cases, ifs, methods]
-
-    it "returns a list of methods", ->
-      assert.ok(scores[methods].methods.length is 7)
+    scores = JSON.parse clog.report [cases, ifs]
 
     it "returns token compexity", ->
       assert.equal(scores[cases].complexity, 29)
