@@ -1,6 +1,6 @@
 Rules for how each token type is weighted in terms of maintainability.
 
-    rules =
+    module.exports =
       "+": 1
       "=": 1
       "(": 1
@@ -54,5 +54,3 @@ Rules for how each token type is weighted in terms of maintainability.
       "TERMINATOR": 1
       "UNARY": 3
       "UNARY_MATH": 1
-
-    exports.rules = rules

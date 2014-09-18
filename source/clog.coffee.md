@@ -7,30 +7,32 @@ corresponding to the token type.
 
     execSync = require "exec-sync"
     {tokens} = require "coffee-script"
-    {rules} = require "../lib/rules"
+    rules = require "../lib/rules"
 
     fs = require "fs"
     glob = require "glob"
 
-Helper to read a file in utf-8.
-
-    read = (path) ->
-      fs.readFileSync(path, "utf8")
-
-Helper to determine if filePath represents
-a literate Coffee file.
+Helper to determine if filePath represents a literate Coffee file.
 
     isLiterate = (path) ->
       /\.litcoffee|\.coffee\.md/i.test(path)
 
+Helper to return tokens for a given file path.
+
+    tokensForFile = (path) ->
+      file = fs.readFileSync(path, "utf8")
+
+      tokens file,
+        literate: isLiterate(path)
+
 ## Metric: Churn
 
-Indicates how many times a file has been changed. The more
-it has been changed, the better a candidate it is for refactoring.
+Indicates how many times a file has been changed.
+The more it has been changed, the better a candidate it is for refactoring.
 
     churn = (filePath) ->
 
-Grep for commit since git whatchanged shows
+Grep for commit since `git whatchanged` shows
 multiple lines of details from each commit.
 
       command = "git whatchanged #{filePath} | grep 'commit' | wc -l"
@@ -39,50 +41,52 @@ multiple lines of details from each commit.
 
 ## Metric: Token count
 
-The number of tokens in the file. Used in conjunction with
-token score to determine average complexity per token.
+The number of tokens in the file.
+Used in conjunction with token score to determine gpa.
 
     count = (filePath) ->
-      file = read(filePath)
+      tokensForFile(filePath).length
 
-      tokens file,
-        literate: isLiterate(filePath)
-      .length
+## Metric: Token complexity
 
-## Metric: Token score
+Determines how complex code is by weighing each token based on maintainability.
+Using tokens is style agnostic and won't change based on
+comment / documentation style, or from personal whitespace style.
 
-Determines how complex code is by weighing each token
-based on maintainability. Using tokens is style agnostic
-and won't change based on comment / documentation style,
-or from personal whitespace style.
-
-    score = (filePath) ->
-      file = read(filePath)
-
-      tokens file,
-        literate: isLiterate(filePath)
-      .reduce (sum, token) ->
+    complexity = (filePath) ->
+      tokensForFile(filePath).reduce (sum, token) ->
         type = token[0]
         sum + (rules[type] || 0)
       , 0
 
 ## Metric: Complexity per token
 
-Represents the average complexity of each token in the file.
+Gives the file a grade based on it's token complexity compared to token length.
+Scaled from 0-4.
 
-    averageComplexity = (filePath) ->
+    gpa = (filePath) ->
       tokenCount = count(filePath)
       return 0 if tokenCount is 0
 
-      score(filePath) / tokenCount
+      if 0 <= tokenCount <= 200
+        longFilePenalty = 0
+      else if 200 < tokenCount <= 300
+        longFilePenalty = 0.25
+      else if 300 < tokenCount <= 500
+        longFilePenalty = 0.5
+      else if tokenCount > 500
+        longFilePenalty = 1
 
-Return an array of CoffeeScript files based on file filePaths
-or directories passed in.
+      base = tokenCount / complexity(filePath)
+      penalized = (base * 4) - longFilePenalty
+
+      Math.max(penalized, 0)
+
+Return an array of CoffeeScript files based on file filePaths or directories
+passed in.
 
     files = (paths) ->
       paths.reduce (list, path) ->
-        # get stats on the path in order to determine
-        # if we have a directory or a file.
         stats = fs.lstatSync(path)
 
         if stats.isFile()
@@ -96,21 +100,21 @@ or directories passed in.
 
 Output scores per file.
 
-    report = (filePaths) ->
-      JSON.stringify(files(filePaths).reduce (hash, file) ->
+    report = (filePaths, opts={}) ->
+      scores = files(filePaths).reduce (hash, file) ->
         hash[file] =
-          averageComplexity: averageComplexity(file)
+          gpa: gpa(file)
           churn: churn(file)
-          complexity: score(file)
+          complexity: complexity(file)
           tokenCount: count(file)
 
         hash
-      , {})
+      , {}
+
+      JSON.stringify(scores, null, opts.indentSpace)
 
 Export public API.
 
     exports.clog =
-      churn: churn
-      score: score
       report: report
       VERSION: "0.0.10"

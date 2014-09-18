@@ -10,6 +10,10 @@
   "bin": {
     "clog": "./bin/clog"
   },
+  "scripts": {
+    "watch": "coffee -wclo lib source",
+    "test": "NODE_ENV=test mocha --compilers coffee:coffee-script --require coffee-script --colors"
+  },
   "dependencies": {
     "coffee-script": "~1.7.1",
     "exec-sync": "~0.1.6",
