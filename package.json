@@ -12,12 +12,15 @@
   },
   "scripts": {
     "watch": "coffee -wclo lib source",
-    "test": "NODE_ENV=test mocha --compilers coffee:coffee-script --require coffee-script --colors"
+    "test": "NODE_ENV=test mocha --compilers coffee:coffee-script/register --colors"
   },
   "dependencies": {
     "coffee-script": "~1.7.1",
     "exec-sync": "~0.1.6",
     "minimist": "~0.0.7",
     "glob": "~3.2.8"
+  },
+  "devDependencies": {
+    "mocha": "^2.3.3"
   }
 }
