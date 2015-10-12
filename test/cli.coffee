@@ -1,5 +1,5 @@
 assert = require "assert"
-execSync = require "exec-sync"
+execSync = require("child_process").execSync
 
 describe "cli", ->
   it "prints out usage instructions", ->

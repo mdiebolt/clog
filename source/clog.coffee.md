@@ -5,7 +5,7 @@ Leverages CoffeeScript compiler, walking over all tokens
 in a file and weighing the code based on a number of heuristics
 corresponding to the token type.
 
-    execSync = require "exec-sync"
+    execSync = require("child_process").execSync
     {tokens} = require "coffee-script"
     rules = require "../lib/rules"
 

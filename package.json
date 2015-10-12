@@ -16,7 +16,6 @@
   },
   "dependencies": {
     "coffee-script": "~1.7.1",
-    "exec-sync": "~0.1.6",
     "minimist": "~0.0.7",
     "glob": "~3.2.8"
   }
