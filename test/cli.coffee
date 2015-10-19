@@ -4,6 +4,7 @@ assert = require "assert"
 describe "cli", ->
   it "prints out usage instructions", ->
     output = execSync "./bin/clog"
+
     assert.ok(output.toString("utf-8").indexOf("Usage:") >= 0)
 
   describe "reports", ->
@@ -15,7 +16,7 @@ describe "cli", ->
     it "supports passing in the current directory", ->
       output = JSON.parse(execSync "./bin/clog .")
 
-      assert.ok(output["./source/clog.coffee.md"].churn?)
+      assert.ok(output["./source/clog.coffee"].churn?)
       assert.ok(output["./test/clog.coffee"].tokenCount?)
 
     it "supports passing in a single file", ->
@@ -24,16 +25,16 @@ describe "cli", ->
       assert.ok(output["test/fixtures/case.coffee"].complexity?)
 
     it "supports passing in multiple files", ->
-      command = "./bin/clog test/fixtures/nested_ifs.coffee source/rules.coffee.md"
+      command = "./bin/clog test/fixtures/nested_ifs.coffee source/rules.coffee"
       output = JSON.parse(execSync command)
 
       assert.ok(output["test/fixtures/nested_ifs.coffee"].gpa?)
-      assert.ok(output["source/rules.coffee.md"].churn?)
+      assert.ok(output["source/rules.coffee"].churn?)
 
     it "supports passing in a mix of directories and files", ->
       command = "./bin/clog source test/cli.coffee"
       output = JSON.parse(execSync command)
 
-      assert.ok(output["source/rules.coffee.md"].gpa?)
-      assert.ok(output["source/clog.coffee.md"].gpa?)
+      assert.ok(output["source/rules.coffee"].gpa?)
+      assert.ok(output["source/clog.coffee"].gpa?)
       assert.ok(output["test/cli.coffee"].churn?)
