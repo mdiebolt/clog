@@ -5,7 +5,7 @@ Leverages CoffeeScript compiler, walking over all tokens
 in a file and weighing the code based on a number of heuristics
 corresponding to the token type.
 
-    execSync = require "exec-sync"
+    {execSync} = require "child_process"
     {tokens} = require "coffee-script"
     rules = require "../lib/rules"
 
@@ -117,4 +117,4 @@ Export public API.
 
     exports.clog =
       report: report
-      VERSION: "0.0.10"
+      VERSION: "0.0.12"

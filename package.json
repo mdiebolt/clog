@@ -2,7 +2,7 @@
   "author": "Matt Diebolt",
   "name": "clog-analysis",
   "description": "Simple CoffeeScript static analysis for code quality metrics",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "repository": {
     "type": "git",
     "url": "https://github.com/mdiebolt/clog.git"
@@ -15,10 +15,9 @@
     "test": "NODE_ENV=test mocha --compilers coffee:coffee-script/register --colors"
   },
   "dependencies": {
-    "coffee-script": "~1.7.1",
-    "exec-sync": "~0.1.6",
-    "minimist": "~0.0.7",
-    "glob": "~3.2.8"
+    "coffee-script": "^1.10.0",
+    "glob": "^5.0.15",
+    "minimist": "^1.2.0"
   },
   "devDependencies": {
     "mocha": "^2.3.3"

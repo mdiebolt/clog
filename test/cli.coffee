@@ -1,10 +1,10 @@
 assert = require "assert"
-execSync = require "exec-sync"
+{execSync} = require "child_process"
 
 describe "cli", ->
   it "prints out usage instructions", ->
     output = execSync "./bin/clog"
-    assert.ok(output.indexOf("Usage:") >= 0)
+    assert.ok(output.toString("utf-8").indexOf("Usage:") >= 0)
 
   describe "reports", ->
     it "supports passing in a directory", ->
