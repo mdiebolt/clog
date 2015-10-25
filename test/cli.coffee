@@ -1,40 +1,74 @@
 assert = require "assert"
-{execSync} = require "child_process"
+cli = require "../lib/cli"
 
-describe "cli", ->
-  it "prints out usage instructions", ->
-    output = execSync "./bin/clog"
+SEMVER_PATTERN = /\d+\.\d+\.\d+/
 
-    assert.ok(output.toString("utf-8").indexOf("Usage:") >= 0)
+describe "CLI", ->
+  describe "instructions", ->
+    it "outputs when no arguments are passed", ->
+      output = cli
+        _: []
 
-  describe "reports", ->
+      assert.ok(/Usage/.test(output))
+
+  describe "help", ->
+    it "outputs instructions with short flag", ->
+      output = cli
+        _: []
+        h: true
+
+      assert.ok(/Usage/.test(output))
+
+    it "outputs instructions with short flag", ->
+      output = cli
+        _: []
+        help: true
+
+      assert.ok(/Usage/.test(output))
+
+  describe "version", ->
+    it "outputs version with short flag", ->
+      output = cli
+        _: []
+        v: true
+
+      assert.ok(SEMVER_PATTERN.test(output))
+
+    it "outputs version with long flag", ->
+      output = cli
+        _: []
+        version: true
+
+      assert.ok(SEMVER_PATTERN.test(output))
+
+  describe "reporting on directories", ->
     it "supports passing in a directory", ->
-      output = execSync "./bin/clog test"
+      output = cli
+        _: ["test"]
 
-      assert.ok(output.length > 0)
+      assert.ok(output.length)
 
-    it "supports passing in the current directory", ->
-      output = JSON.parse(execSync "./bin/clog .")
-
-      assert.ok(output["./source/clog.coffee"].churn?)
-      assert.ok(output["./test/clog.coffee"].tokenCount?)
-
+  describe "reporting on files", ->
     it "supports passing in a single file", ->
-      output = JSON.parse(execSync "./bin/clog test/fixtures/case.coffee")
+      report = cli
+        _: ["test/fixtures/case.coffee"]
 
-      assert.ok(output["test/fixtures/case.coffee"].complexity?)
+      output = JSON.parse(report)
+      assert.ok(output["test/fixtures/case.coffee"].gpa?)
 
     it "supports passing in multiple files", ->
-      command = "./bin/clog test/fixtures/nested_ifs.coffee source/rules.coffee"
-      output = JSON.parse(execSync command)
+      report = cli
+        _: ["test/fixtures/nested_ifs.coffee", "source/rules.coffee"]
 
+      output = JSON.parse(report)
       assert.ok(output["test/fixtures/nested_ifs.coffee"].gpa?)
-      assert.ok(output["source/rules.coffee"].churn?)
+      assert.ok(output["source/rules.coffee"].gpa?)
 
     it "supports passing in a mix of directories and files", ->
-      command = "./bin/clog source test/cli.coffee"
-      output = JSON.parse(execSync command)
+      report = cli
+        _: ["source", "test/cli.coffee"]
 
+      output = JSON.parse(report)
       assert.ok(output["source/rules.coffee"].gpa?)
       assert.ok(output["source/clog.coffee"].gpa?)
-      assert.ok(output["test/cli.coffee"].churn?)
+      assert.ok(output["test/cli.coffee"].gpa?)

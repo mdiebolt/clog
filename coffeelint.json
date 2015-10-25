@@ -16,8 +16,8 @@
     }
   },
   "cyclomatic_complexity": {
-    "value": 10,
-    "level": "warn"
+    "value": 7,
+    "level": "error"
   },
   "duplicate_key": {
     "level": "error"
@@ -120,5 +120,10 @@
   },
   "transform_messes_up_line_numbers": {
     "level": "warn"
+  },
+  "no_long_functions": {
+    "module": "coffeelint-no-long-functions",
+    "level": "error",
+    "value": 20
   }
 }

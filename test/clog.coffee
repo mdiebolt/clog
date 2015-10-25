@@ -5,27 +5,83 @@ assert = require "assert"
 fixturePath = (name) ->
   "#{__dirname}/fixtures/#{name}.coffee"
 
-describe "Clog", ->
-  describe "churn", ->
+describe "churn", ->
+  scores = null
+
+  beforeEach ->
     scores = JSON.parse clog.report [__filename]
 
-    it "counts the number of changes to the file", ->
-      assert.ok(scores[__filename].churn > 0)
+  it "counts the number of changes to the file", ->
+    assert.ok(scores[__filename].churn > 0)
 
-  describe "#report", ->
-    cases = fixturePath("case")
-    ifs = fixturePath("nested_ifs")
+describe "classes", ->
+  file = scores = null
 
-    scores = JSON.parse clog.report [cases, ifs]
+  beforeEach ->
+    file = fixturePath("class")
+    scores = JSON.parse clog.report [file]
 
-    it "returns token compexity", ->
-      assert.equal(scores[cases].complexity, 29)
-      assert.equal(scores[ifs].complexity, 22)
+  it "return correct report", ->
+    assert.ok(scores[file].churn?)
+    assert.equal(6, scores[file].tokenComplexity)
+    assert.equal(2, scores[file].gpa.toFixed(2))
+    assert.equal(3, scores[file].tokenCount)
+    assert.equal("C", scores[file].letterGrade)
 
-    it "returns gpa", ->
-      assert.equal(scores[cases].gpa.toFixed(2), 3.59)
-      assert.equal(scores[ifs].gpa.toFixed(2), 3.27)
+describe "nested if statements", ->
+  file = scores = null
 
-    it "returns token count", ->
-      assert.equal(scores[cases].tokenCount, 26)
-      assert.equal(scores[ifs].tokenCount, 18)
+  beforeEach ->
+    file = fixturePath("nested_ifs")
+    scores = JSON.parse clog.report [file]
+
+  it "return correct report", ->
+    assert.ok(scores[file].churn?)
+    assert.equal(21, scores[file].tokenComplexity)
+    assert.equal(3.43, scores[file].gpa.toFixed(2))
+    assert.equal(18, scores[file].tokenCount)
+    assert.equal("A", scores[file].letterGrade)
+
+describe "case statements", ->
+  file = scores = null
+
+  beforeEach ->
+    file = fixturePath("case")
+    scores = JSON.parse clog.report [file]
+
+  it "return correct report", ->
+    assert.ok(scores[file].churn?)
+    assert.equal(scores[file].tokenComplexity, 26)
+    assert.equal(scores[file].gpa.toFixed(2), 4)
+    assert.equal(scores[file].tokenCount, 26)
+    assert.equal(scores[file].letterGrade, "A")
+
+describe "long files", ->
+  file = scores = null
+
+  beforeEach ->
+    file = fixturePath("long_file")
+    scores = JSON.parse clog.report [file]
+
+  it "correctly penalizes", ->
+    assert.equal(scores[file].gpa.toFixed(2), 2.8, "GPA")
+
+describe "complex files", ->
+  file = scores = null
+
+  beforeEach ->
+    file = fixturePath("complex")
+    scores = JSON.parse clog.report [file]
+
+  it "correctly penalizes", ->
+    assert.equal(scores[file].gpa.toFixed(2), 2.3, "GPA")
+
+describe "long function length", ->
+  file = scores = null
+
+  beforeEach ->
+    file = fixturePath("long_function")
+    scores = JSON.parse clog.report [file]
+
+  it "correctly penalizes", ->
+    assert.equal(scores[file].gpa.toFixed(2), 2.79, "GPA")

@@ -15,7 +15,26 @@ Generates a report of churn and complexity for `file1.coffee`, `file2.coffee`, a
 ## Contributing
 
 1. Fork it
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create new Pull Request
+1. Create your feature branch (`git checkout -b my-new-feature`)
+1. Commit your changes (`git commit -am 'Add some feature'`)
+1. Push to the branch (`git push origin my-new-feature`)
+1. Create new Pull Request
+
+## TODO
+
+Stub out fs read file to speed up CLI specs
+
+## Known issues
+
+Method length metric can be incorrect if you have comments at the same level as another function.
+
+```coffee
+fnOne = ->
+  doSomething()
+
+# This is what function two does
+fnTwo = ->
+  doSomethingElse()
+```
+
+In the above example the comment above `fnTwo` will be added to the method length calculation for `fnOne`.
