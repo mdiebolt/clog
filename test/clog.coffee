@@ -7,25 +7,45 @@ fixturePath = (name) ->
 
 describe "Clog", ->
   describe "churn", ->
-    scores = JSON.parse clog.report [__filename]
+    scores = null
+
+    beforeEach ->
+      scores = JSON.parse clog.report [__filename]
 
     it "counts the number of changes to the file", ->
       assert.ok(scores[__filename].churn > 0)
 
   describe "#report", ->
-    cases = fixturePath("case")
-    ifs = fixturePath("nested_ifs")
+    cases = ifs = klass = scores = null
 
-    scores = JSON.parse clog.report [cases, ifs]
+    beforeEach ->
+      cases = fixturePath("case")
+      ifs = fixturePath("nested_ifs")
+      klass = fixturePath("class")
+
+      scores = JSON.parse clog.report [cases, ifs, klass]
+
+    it "returns churn", ->
+      assert.ok(scores[cases].churn?)
+      assert.ok(scores[ifs].churn?)
+      assert.ok(scores[klass].churn?)
 
     it "returns token compexity", ->
-      assert.equal(scores[cases].complexity, 29)
-      assert.equal(scores[ifs].complexity, 22)
+      assert.equal(scores[cases].complexity, 26)
+      assert.equal(scores[ifs].complexity, 21)
+      assert.equal(scores[klass].complexity, 6)
 
     it "returns gpa", ->
-      assert.equal(scores[cases].gpa.toFixed(2), 3.59)
-      assert.equal(scores[ifs].gpa.toFixed(2), 3.27)
+      assert.equal(+scores[cases].gpa.toFixed(2), 4)
+      assert.equal(+scores[ifs].gpa.toFixed(2), 3.43)
+      assert.equal(+scores[klass].gpa.toFixed(2), 2)
 
     it "returns token count", ->
       assert.equal(scores[cases].tokenCount, 26)
       assert.equal(scores[ifs].tokenCount, 18)
+      assert.equal(scores[klass].tokenCount, 3)
+
+    it "returns letter grade", ->
+      assert.equal(scores[cases].letterGrade, "A")
+      assert.equal(scores[ifs].letterGrade, "A")
+      assert.equal(scores[klass].letterGrade, "C")

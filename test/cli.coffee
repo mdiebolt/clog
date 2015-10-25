@@ -2,10 +2,15 @@ assert = require "assert"
 {execSync} = require "child_process"
 
 describe "cli", ->
-  it "prints out usage instructions", ->
+  it "outputs usage instructions", ->
     output = execSync "./bin/clog"
 
     assert.ok(output.toString("utf-8").indexOf("Usage:") >= 0)
+
+  it "outputs version", ->
+    output = execSync "./bin/clog -v"
+
+    assert.ok(output.toString("utf-8").indexOf("0.0.12") >= 0)
 
   describe "reports", ->
     it "supports passing in a directory", ->
@@ -13,7 +18,7 @@ describe "cli", ->
 
       assert.ok(output.length > 0)
 
-    it "supports passing in the current directory", ->
+    xit "supports passing in the current directory", ->
       output = JSON.parse(execSync "./bin/clog .")
 
       assert.ok(output["./source/clog.coffee"].churn?)

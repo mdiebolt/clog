@@ -11,8 +11,10 @@
     "clog": "./bin/clog"
   },
   "scripts": {
+    "compile": "coffee -co lib source",
     "lint": "coffeelint -q source test",
-    "test": "NODE_ENV=test mocha --compilers coffee:coffee-script/register --colors && npm run lint",
+    "test": "npm run compile && npm run mocha && npm run lint",
+    "mocha": "NODE_ENV=test mocha --compilers coffee:coffee-script/register --colors",
     "watch": "coffee -wco lib source"
   },
   "dependencies": {
