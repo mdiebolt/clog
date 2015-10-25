@@ -27,7 +27,7 @@ describe "cli", ->
     it "supports passing in a single file", ->
       output = JSON.parse(execSync "./bin/clog test/fixtures/case.coffee")
 
-      assert.ok(output["test/fixtures/case.coffee"].complexity?)
+      assert.ok(output["test/fixtures/case.coffee"].cyclomaticComplexity?)
 
     it "supports passing in multiple files", ->
       command = "./bin/clog test/fixtures/nested_ifs.coffee source/rules.coffee"

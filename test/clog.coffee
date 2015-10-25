@@ -31,9 +31,9 @@ describe "Clog", ->
       assert.ok(scores[klass].churn?)
 
     it "returns token compexity", ->
-      assert.equal(scores[cases].complexity, 26)
-      assert.equal(scores[ifs].complexity, 21)
-      assert.equal(scores[klass].complexity, 6)
+      assert.equal(scores[cases].tokenComplexity, 26)
+      assert.equal(scores[ifs].tokenComplexity, 21)
+      assert.equal(scores[klass].tokenComplexity, 6)
 
     it "returns gpa", ->
       assert.equal(+scores[cases].gpa.toFixed(2), 4)

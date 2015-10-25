@@ -6,29 +6,54 @@
 # corresponding to the token type.
 {version} = require "../package.json"
 {execSync} = require "child_process"
-{tokens} = require "coffee-script"
+
+coffee = require "coffee-script"
+{tokens} = coffee
+
+CoffeeLint = require "coffeelint"
+lintConfig =
+  cyclomatic_complexity:
+    value: 0
+    level: "error"
+
 rules = require "./rules"
 
 fs = require "fs"
 glob = require "glob"
 
-NESTED_COFFEESCRIPT_PATTERN = "/**/*\.+(coffee|coffee\.md|litcoffee)"
+nestedCoffeeScriptPattern = (path) ->
+  path + "/**/*\.+(coffee|coffee\.md|litcoffee)"
 
 # Force number to be within min and max
 clamp = (number, min, max) ->
   Math.max(Math.min(max, number), min)
-
-# Helper to determine if filePath represents a literate Coffee file.
-# TODO: use CoffeeScript built in helper for this
-isLiterate = (path) ->
-  /\.litcoffee|\.coffee\.md/i.test(path)
 
 # Helper to return tokens for a given file path.
 tokensForFile = (path) ->
   file = fs.readFileSync(path, "utf8")
 
   tokens file,
-    literate: isLiterate(path)
+    literate: coffee.helpers.isLiterate(path)
+
+## Metric: Cyclomatic complexity
+
+# A number representing how complex a file is
+# Piggybacking off the implementation from CoffeeLint
+# Report each function's complexity by setting CoffeeLint error threshold to 0
+cyclomaticComplexity = (filePath) ->
+  file = fs.readFileSync(filePath, "utf8")
+
+  sum = 0
+  output = CoffeeLint.lint(file, lintConfig).reduce (hash, description) ->
+    if description.rule == "cyclomatic_complexity"
+      lineRange = description.lineNumber + "-" + description.lineNumberEnd
+      hash.lines[lineRange] = description.context
+      sum += description.context
+    hash
+  , {lines: {}}
+
+  output.total = sum
+  output
 
 ## Metric: Churn
 
@@ -54,7 +79,7 @@ count = (filePath) ->
 # Determines how complex code is by weighing each token based on maintainability.
 # Using tokens is style agnostic and won't change based on
 # comment / documentation style, or from personal whitespace style.
-complexity = (filePath) ->
+tokenComplexity = (filePath) ->
   tokensForFile(filePath).reduce (sum, token) ->
     type = token[0]
     sum += (rules[type] || 0)
@@ -78,7 +103,7 @@ gpa = (filePath) ->
   tokenCount = count(filePath)
   return 0 if tokenCount == 0
 
-  base = tokenCount / complexity(filePath)
+  base = tokenCount / tokenComplexity(filePath)
   penalized = (base * 4) - longFilePenalty(tokenCount)
 
   clamp(penalized, 0, 4)
@@ -104,7 +129,7 @@ files = (paths) ->
     if stats.isFile()
       list.push path
     else if stats.isDirectory()
-      pattern = path + NESTED_COFFEESCRIPT_PATTERN
+      pattern = nestedCoffeeScriptPattern(path)
       list = list.concat(glob.sync pattern)
 
     list
@@ -118,7 +143,8 @@ analyze = (file) ->
     gpa: numericGrade
     letterGrade: letterGrade(numericGrade)
     churn: churn(file)
-    complexity: complexity(file)
+    cyclomaticComplexity: cyclomaticComplexity(file)
+    tokenComplexity: tokenComplexity(file)
     tokenCount: count(file)
   }
 
