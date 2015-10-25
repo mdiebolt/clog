@@ -8,11 +8,20 @@
 {execSync} = require "child_process"
 
 coffee = require "coffee-script"
+# Register the compiler so we can can require .coffee files
+require "coffee-script/register"
 {tokens} = coffee
 
 CoffeeLint = require "coffeelint"
-lintConfig =
+CoffeeLint.registerRule require "coffeelint-no-long-functions"
+
+complexityConfig =
   cyclomatic_complexity:
+    value: 0
+    level: "error"
+
+functionLengthConfig =
+  no_long_functions:
     value: 0
     level: "error"
 
@@ -35,6 +44,21 @@ tokensForFile = (path) ->
   tokens file,
     literate: coffee.helpers.isLiterate(path)
 
+## Metric: Function length
+
+# Return the number of lines per function.
+# Piggybacking off CoffeeLint implementation
+# Report each function's length by setting CoffeeLint error threshold to 0
+functionLength = (filePath) ->
+  file = fs.readFileSync(filePath, "utf8")
+  output = CoffeeLint.lint(file, functionLengthConfig).reduce (hash, description) ->
+    if description.rule == "no_long_functions"
+      lineRange = description.lineNumber + "-" + description.lineNumberEnd
+      hash[lineRange] = description.lineNumberEnd - description.lineNumber
+
+    hash
+  , {}
+
 ## Metric: Cyclomatic complexity
 
 # A number representing how complex a file is
@@ -44,11 +68,12 @@ cyclomaticComplexity = (filePath) ->
   file = fs.readFileSync(filePath, "utf8")
 
   sum = 0
-  output = CoffeeLint.lint(file, lintConfig).reduce (hash, description) ->
+  output = CoffeeLint.lint(file, complexityConfig).reduce (hash, description) ->
     if description.rule == "cyclomatic_complexity"
       lineRange = description.lineNumber + "-" + description.lineNumberEnd
       hash.lines[lineRange] = description.context
       sum += description.context
+
     hash
   , {lines: {}}
 
@@ -138,11 +163,13 @@ files = (paths) ->
 # Metrics for an individual file
 analyze = (file) ->
   numericGrade = gpa(file)
+  # TODO: consider caching file read here
 
   {
     gpa: numericGrade
     letterGrade: letterGrade(numericGrade)
     churn: churn(file)
+    functionLength: functionLength(file)
     cyclomaticComplexity: cyclomaticComplexity(file)
     tokenComplexity: tokenComplexity(file)
     tokenCount: count(file)

@@ -39,7 +39,6 @@ describe "cli", ->
     it "supports passing in a mix of directories and files", ->
       command = "./bin/clog source test/cli.coffee"
       output = JSON.parse(execSync command)
-
       assert.ok(output["source/rules.coffee"].gpa?)
       assert.ok(output["source/clog.coffee"].gpa?)
       assert.ok(output["test/cli.coffee"].churn?)

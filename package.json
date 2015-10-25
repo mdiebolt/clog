@@ -13,11 +13,14 @@
   "scripts": {
     "compile": "coffee -co lib source",
     "lint": "coffeelint -q source test",
-    "test": "npm run compile && mocha && npm run lint"
+    "pretest": "npm run compile",
+    "test": "mocha && npm run lint",
+    "prepublish": "npm test"
   },
   "dependencies": {
     "coffee-script": "^1.10.0",
     "coffeelint": "^1.13.0",
+    "coffeelint-no-long-functions": "git://github.com/mdiebolt/coffeelint-no-long-functions.git",
     "glob": "^5.0.15",
     "minimist": "^1.2.0"
   },
