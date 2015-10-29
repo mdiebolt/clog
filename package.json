@@ -12,7 +12,7 @@
   },
   "scripts": {
     "compile": "coffee -co lib source",
-    "lint": "coffeelint -q source test",
+    "lint": "coffeelint -q source",
     "pretest": "npm run compile",
     "test": "mocha && npm run lint",
     "prepublish": "npm test"

@@ -15,6 +15,9 @@ require "coffee-script/register"
 CoffeeLint = require "coffeelint"
 CoffeeLint.registerRule require "coffeelint-no-long-functions"
 
+MIN_GPA = 0
+MAX_GPA = 4
+
 complexityConfig =
   cyclomatic_complexity:
     value: 0
@@ -37,47 +40,62 @@ nestedCoffeeScriptPattern = (path) ->
 clamp = (number, min, max) ->
   Math.max(Math.min(max, number), min)
 
-# Helper to return tokens for a given file path.
-tokensForFile = (path) ->
-  file = fs.readFileSync(path, "utf8")
-
-  tokens file,
-    literate: coffee.helpers.isLiterate(path)
+# Safely divide to figure out average
+divide = (numerator, denominator) ->
+  if denominator
+    numerator / denominator
+  else
+    0
 
 ## Metric: Function length
 
 # Return the number of lines per function.
 # Piggybacking off CoffeeLint implementation
 # Report each function's length by setting CoffeeLint error threshold to 0
-functionLength = (filePath) ->
-  file = fs.readFileSync(filePath, "utf8")
+# TODO: fix this. Right now CoffeeLint's function length plugin incorrectly
+# counts comments preceeding a method as part of the same indentation level
+# method above it.
+functionLength = (file) ->
+  sum = max = 0
   output = CoffeeLint.lint(file, functionLengthConfig).reduce (hash, description) ->
     if description.rule == "no_long_functions"
       lineRange = description.lineNumber + "-" + description.lineNumberEnd
-      hash[lineRange] = description.lineNumberEnd - description.lineNumber
+      length = description.lineNumberEnd - description.lineNumber
+      hash.lines[lineRange] = length
+      sum += length
+      if length > max
+        max = length
 
     hash
-  , {}
+  , {lines: {}}
+
+  output.average = divide(sum, Object.keys(output.lines).length)
+  output.max = max
+
+  output
 
 ## Metric: Cyclomatic complexity
 
 # A number representing how complex a file is
 # Piggybacking off the implementation from CoffeeLint
 # Report each function's complexity by setting CoffeeLint error threshold to 0
-cyclomaticComplexity = (filePath) ->
-  file = fs.readFileSync(filePath, "utf8")
-
-  sum = 0
+cyclomaticComplexity = (file) ->
+  sum = max = 0
   output = CoffeeLint.lint(file, complexityConfig).reduce (hash, description) ->
     if description.rule == "cyclomatic_complexity"
       lineRange = description.lineNumber + "-" + description.lineNumberEnd
       hash.lines[lineRange] = description.context
       sum += description.context
+      if description.context > max
+        max = description.context
 
     hash
   , {lines: {}}
 
+  output.average = divide(sum, Object.keys(output.lines).length)
+  output.max = max
   output.total = sum
+
   output
 
 ## Metric: Churn
@@ -92,46 +110,46 @@ churn = (filePath) ->
   output = execSync command
   parseInt(output, 10)
 
-## Metric: Token count
-
-# The number of tokens in the file.
-# Used in conjunction with token score to determine gpa.
-count = (filePath) ->
-  tokensForFile(filePath).length
-
 ## Metric: Token complexity
 
 # Determines how complex code is by weighing each token based on maintainability.
 # Using tokens is style agnostic and won't change based on
 # comment / documentation style, or from personal whitespace style.
-tokenComplexity = (filePath) ->
-  tokensForFile(filePath).reduce (sum, token) ->
+tokenComplexity = (tokens) ->
+  tokens.reduce (sum, token) ->
     type = token[0]
     sum += (rules[type] || 0)
   , 0
 
-longFilePenalty = (tokens) ->
-  if 0 <= tokens <= 200
-    0
-  else if 200 < tokens <= 300
-    0.25
-  else if 300 < tokens <= 500
-    0.5
-  else if tokens > 500
+complexFilePenalty = (complexity) ->
+  if 0 <= complexity <= 20
     1
+  else if 20 < complexity <= 30
+    0.9
+  else if 30 < complexity <= 40
+    0.8
+  else if complexity > 40
+    0.7
 
-## Metric: Complexity per token
+longFunctionPenalty = (averageFunctionLength) ->
+  if 0 <= averageFunctionLength <= 20
+    1
+  else if 20 < averageFunctionLength <= 40
+    0.9
+  else if 40 < averageFunctionLength <= 60
+    0.8
+  else if averageFunctionLength > 60
+    0.7
 
-# Gives the file a grade between 0-4
-# based on token complexity compared to token length
-gpa = (filePath) ->
-  tokenCount = count(filePath)
-  return 0 if tokenCount == 0
-
-  base = tokenCount / tokenComplexity(filePath)
-  penalized = (base * 4) - longFilePenalty(tokenCount)
-
-  clamp(penalized, 0, 4)
+longFilePenalty = (tokens) ->
+  if 0 <= tokens <= 1000
+    1
+  else if 1000 < tokens <= 2000
+    0.9
+  else if 2000 < tokens <= 4000
+    0.8
+  else if tokens > 4000
+    0.7
 
 letterGrade = (numericGrade) ->
   if 0 <= numericGrade <= 0.8
@@ -144,6 +162,21 @@ letterGrade = (numericGrade) ->
     "B"
   else if 3.2 < numericGrade <= 4
     "A"
+
+## Metric: Complexity per token
+
+# Gives the file a grade between 0-4
+# based on token complexity compared to token length
+rawGpa = (file, tokens) ->
+  tokenCount = tokens.length
+  return 0 unless tokenCount
+
+  raw = tokenCount / tokenComplexity(tokens)
+  raw * MAX_GPA
+
+gpa = (base, penalties) ->
+  penalized = base * penalties.filePenalty * penalties.functionPenalty * penalties.complexityPenalty
+  clamp(penalized, MIN_GPA, MAX_GPA)
 
 # Return an array of CoffeeScript files
 # based on file filePaths or directories passed in
@@ -161,18 +194,29 @@ files = (paths) ->
   , []
 
 # Metrics for an individual file
-analyze = (file) ->
-  numericGrade = gpa(file)
-  # TODO: consider caching file read here
+analyze = (filePath) ->
+  file = fs.readFileSync(filePath, "utf8")
+
+  fileTokens = tokens file,
+    literate: coffee.helpers.isLiterate(filePath)
+
+  fLength = functionLength(file)
+  cComplexity = cyclomaticComplexity(file)
+
+  raw = rawGpa(file, fileTokens)
+  numericGrade = gpa raw,
+    filePenalty: longFilePenalty(fileTokens.length)
+    functionPenalty: longFunctionPenalty(fLength.average)
+    complexityPenalty: complexFilePenalty(cComplexity.total)
 
   {
     gpa: numericGrade
     letterGrade: letterGrade(numericGrade)
-    churn: churn(file)
-    functionLength: functionLength(file)
-    cyclomaticComplexity: cyclomaticComplexity(file)
-    tokenComplexity: tokenComplexity(file)
-    tokenCount: count(file)
+    churn: churn(filePath)
+    functionLength: fLength
+    cyclomaticComplexity: cComplexity
+    tokenComplexity: tokenComplexity(fileTokens)
+    tokenCount: fileTokens.length
   }
 
 # Output scores per file

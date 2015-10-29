@@ -16,7 +16,7 @@
     }
   },
   "cyclomatic_complexity": {
-    "value": 10,
+    "value": 7,
     "level": "error"
   },
   "duplicate_key": {
@@ -124,6 +124,6 @@
   "no_long_functions": {
     "module": "coffeelint-no-long-functions",
     "level": "error",
-    "value": 20
+    "value": 30
   }
 }
