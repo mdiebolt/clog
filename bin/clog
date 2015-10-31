@@ -1,38 +1,6 @@
 #!/usr/bin/env node
 
-var __slice = [].slice
-
-var clog = require("../lib/clog").clog
+var cli = require("../lib/cli")
 var argv = require("minimist")(process.argv.slice(2))
 
-function command() {
-  var commands = []
-  if (arguments.length >= 1)
-    commands = __slice.call(arguments, 0)
-
-  return commands.reduce(function(memo, c) {
-    if (argv[c]) {
-      memo = true
-    }
-    return memo
-  }, false)
-}
-
-var USAGE = "\nUsage: clog path/to/file1.coffee path/to/directory\n\n-h, --help    display this message\n-v, --version display the current version"
-var message = USAGE
-
-if (command("h", "help")) {
-  message = USAGE
-} else if (command("v", "version")) {
-  message = clog.VERSION
-} else if (argv._.length) {
-  if (command("p", "pretty-print")) {
-    printOptions = { indentSpace: 2 }
-  } else {
-    printOptions = {}
-  }
-
-  message = clog.report(argv._, printOptions)
-}
-
-console.log(message)
+console.log(cli(argv))
