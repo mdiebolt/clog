@@ -23,4 +23,18 @@ Generates a report of churn and complexity for `file1.coffee`, `file2.coffee`, a
 ## TODO
 
 Stub out fs read file to speed up CLI specs
-Add helper methods to clean up adding avg, max, sum to report hash
+
+## Known issues
+
+Method length metric can be incorrect if you have comments at the same level as another function.
+
+```coffee
+fnOne = ->
+  doSomething()
+
+# This is what function two does
+fnTwo = ->
+  doSomethingElse()
+```
+
+In the above example the comment above `fnTwo` will be added to the method length calculation for `fnOne`.

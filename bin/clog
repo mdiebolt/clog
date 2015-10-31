@@ -4,3 +4,4 @@ var cli = require("../lib/cli")
 var argv = require("minimist")(process.argv.slice(2))
 
 console.log(cli(argv))
+process.exit(0)

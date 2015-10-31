@@ -3,6 +3,7 @@
   "name": "clog-analysis",
   "description": "Simple CoffeeScript static analysis for code quality metrics",
   "version": "0.0.12",
+  "main": "lib/clog.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/mdiebolt/clog.git"

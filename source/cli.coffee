@@ -7,10 +7,22 @@ isCommand = (arg, commands) ->
   , false
 
 USAGE = """
-  Usage: clog path/to/file1.coffee path/to/directory
+  Usage: clog [files] [options]
 
-  -h, --help    display this message
-  -v, --version display the current version
+  Description:
+
+    Static analysis tool for CoffeeScript code quality.
+
+  Files:
+
+    Space separated paths files or directories.
+    Directories will be recursed to find
+    .coffee, .coffee.md, and .litcoffee files to be analyzed
+
+  Options:
+
+    -h, --help    display this message
+    -v, --version display the current version
 """
 
 run = (argv) ->

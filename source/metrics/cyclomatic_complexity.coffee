@@ -1,5 +1,5 @@
 CoffeeLint = require "coffeelint"
-{divide} = require "../util"
+{divide, objectValueMax, objectValueTotal} = require "../util"
 
 complexityConfig =
   cyclomatic_complexity:
@@ -12,21 +12,17 @@ complexityConfig =
 # Piggybacking off the implementation from CoffeeLint
 # Report each function's complexity by setting CoffeeLint error threshold to 0
 cyclomaticComplexity = (file) ->
-  sum = max = 0
   output = CoffeeLint.lint(file, complexityConfig).reduce (hash, description) ->
     if description.rule == "cyclomatic_complexity"
       lineRange = description.lineNumber + "-" + description.lineNumberEnd
       hash.lines[lineRange] = description.context
 
-      sum += description.context
-      max = description.context if description.context > max
-
     hash
   , {lines: {}}
 
-  output.average = divide(sum, Object.keys(output.lines).length)
-  output.max = max
-  output.total = sum
+  output.total = objectValueTotal(output.lines)
+  output.average = divide(output.total, Object.keys(output.lines).length)
+  output.max = objectValueMax(output.lines)
 
   output
 

@@ -124,6 +124,6 @@
   "no_long_functions": {
     "module": "coffeelint-no-long-functions",
     "level": "error",
-    "value": 30
+    "value": 20
   }
 }

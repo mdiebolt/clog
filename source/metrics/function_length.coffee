@@ -1,7 +1,7 @@
 CoffeeLint = require "coffeelint"
 CoffeeLint.registerRule require "coffeelint-no-long-functions"
 
-{divide} = require "../util"
+{divide, objectValueMax, objectValueTotal} = require "../util"
 
 functionLengthConfig =
   no_long_functions:
@@ -17,21 +17,17 @@ functionLengthConfig =
 # counts comments preceeding a method as part of the same indentation level
 # method above it.
 functionLength = (file) ->
-  sum = max = 0
   output = CoffeeLint.lint(file, functionLengthConfig).reduce (hash, description) ->
     if description.rule == "no_long_functions"
       lineRange = description.lineNumber + "-" + description.lineNumberEnd
-      length = description.lineNumberEnd - description.lineNumber
-      hash.lines[lineRange] = length
-
-      sum += length
-      max = length if length > max
+      hash.lines[lineRange] = description.lineNumberEnd - description.lineNumber
 
     hash
   , {lines: {}}
 
-  output.average = divide(sum, Object.keys(output.lines).length)
-  output.max = max
+  output.total = objectValueTotal(output.lines)
+  output.average = divide(output.total, Object.keys(output.lines).length)
+  output.max = objectValueMax(output.lines)
 
   output
 

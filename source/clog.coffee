@@ -26,31 +26,29 @@ files = (paths) ->
     if stats.isFile()
       list.push path
     else if stats.isDirectory()
-      pattern = nestedCoffeeScriptPattern(path)
-      list = list.concat(glob.sync pattern)
+      matchingFiles = glob.sync nestedCoffeeScriptPattern(path)
+      list = list.concat(matchingFiles)
 
     list
   , []
 
-# Metrics for an individual file
+# Metric summary for an individual file
 analyze = (filePath) ->
   file = fs.readFileSync(filePath, "utf8")
 
   fileTokens = tokens file,
     literate: coffee.helpers.isLiterate(filePath)
 
-  summary = {
+  summary =
     churn: churn(filePath)
     functionLength: functionLength(file)
     cyclomaticComplexity: cyclomaticComplexity(file)
     tokenComplexity: tokenComplexity(fileTokens)
     tokenCount: fileTokens.length
-  }
 
-  numericGrade = gpa(file, summary)
-
-  summary.gpa = numericGrade
-  summary.letterGrade = letterGrade(numericGrade)
+  # calculate GPA based on other metrics
+  summary.gpa = gpa(file, summary)
+  summary.letterGrade = letterGrade(summary.gpa)
 
   summary
 
@@ -67,8 +65,9 @@ report = (filePaths, opts = {}) ->
 
 # A simple static analysis tool for CoffeeScript source code.
 # Leverages CoffeeScript compiler, walking over all tokens
-# in a file and weighing the code based on a number of heuristics
+# in a file and weighing the code based on a heuristic
 # corresponding to the token type.
 exports.clog =
   report: report
+  analyze: analyze
   VERSION: version
