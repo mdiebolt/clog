@@ -2,9 +2,7 @@
 
 isCommand = (arg, commands) ->
   commands.reduce (memo, c) ->
-    if arg[c]
-      memo = true
-
+    memo = true if arg[c]
     memo
   , false
 

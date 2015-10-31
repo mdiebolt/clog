@@ -1,5 +1,5 @@
-tokenComplexity = require "./token_complexity"
 {clamp} = require "../util"
+penalties = require "../penalties"
 
 MIN_GPA = 0
 MAX_GPA = 4
@@ -8,18 +8,19 @@ MAX_GPA = 4
 
 # Gives the file a grade between 0-4
 # based on token complexity compared to token length
-rawGpa = (file, tokens) ->
-  tokenCount = tokens.length
+gpa = (file, metrics) ->
+  {tokenCount, tokenComplexity} = metrics
   return 0 unless tokenCount
 
-  raw = tokenCount / tokenComplexity(tokens)
+  raw = tokenCount / tokenComplexity
   base = raw * MAX_GPA
 
-gpa = (base, scorePenalties) ->
-  penalized = base * scorePenalties.filePenalty * scorePenalties.functionPenalty * scorePenalties.complexityPenalty
+  filePenalty = penalties.longFile(tokenCount)
+  functionPenalty = penalties.longFunction(metrics.functionLength.average)
+  complexityPenalty = penalties.complexFile(metrics.cyclomaticComplexity.total)
+
+  penalized = base * filePenalty * functionPenalty * complexityPenalty
+
   clamp(penalized, MIN_GPA, MAX_GPA)
 
-module.exports = {
-  rawGpa
-  gpa
-}
+module.exports = gpa

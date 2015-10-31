@@ -1,11 +1,4 @@
-# Clog
-
-# A simple static analysis tool for CoffeeScript source code.
-# Leverages CoffeeScript compiler, walking over all tokens
-# in a file and weighing the code based on a number of heuristics
-# corresponding to the token type.
 {version} = require "../package.json"
-{execSync} = require "child_process"
 
 # Metrics
 churn = require "./metrics/churn"
@@ -13,10 +6,7 @@ tokenComplexity = require "./metrics/token_complexity"
 cyclomaticComplexity = require "./metrics/cyclomatic_complexity"
 functionLength = require "./metrics/function_length"
 letterGrade = require "./metrics/letter_grade"
-{gpa, rawGpa} = require "./metrics/gpa"
-
-# Penalties
-penalties = require "./penalties"
+gpa = require "./metrics/gpa"
 
 coffee = require "coffee-script"
 {tokens} = coffee
@@ -49,24 +39,20 @@ analyze = (filePath) ->
   fileTokens = tokens file,
     literate: coffee.helpers.isLiterate(filePath)
 
-  fLength = functionLength(file)
-  cComplexity = cyclomaticComplexity(file)
-
-  raw = rawGpa(file, fileTokens)
-  numericGrade = gpa raw,
-    filePenalty: penalties.longFile(fileTokens.length)
-    functionPenalty: penalties.longFunction(fLength.average)
-    complexityPenalty: penalties.complexFile(cComplexity.total)
-
-  {
-    gpa: numericGrade
-    letterGrade: letterGrade(numericGrade)
+  summary = {
     churn: churn(filePath)
-    functionLength: fLength
-    cyclomaticComplexity: cComplexity
+    functionLength: functionLength(file)
+    cyclomaticComplexity: cyclomaticComplexity(file)
     tokenComplexity: tokenComplexity(fileTokens)
     tokenCount: fileTokens.length
   }
+
+  numericGrade = gpa(file, summary)
+
+  summary.gpa = numericGrade
+  summary.letterGrade = letterGrade(numericGrade)
+
+  summary
 
 # Output scores per file
 report = (filePaths, opts = {}) ->
@@ -77,7 +63,12 @@ report = (filePaths, opts = {}) ->
 
   JSON.stringify(scores, null, opts.indentSpace)
 
-# Public API
+# Clog
+
+# A simple static analysis tool for CoffeeScript source code.
+# Leverages CoffeeScript compiler, walking over all tokens
+# in a file and weighing the code based on a number of heuristics
+# corresponding to the token type.
 exports.clog =
   report: report
   VERSION: version

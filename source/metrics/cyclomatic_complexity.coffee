@@ -17,9 +17,9 @@ cyclomaticComplexity = (file) ->
     if description.rule == "cyclomatic_complexity"
       lineRange = description.lineNumber + "-" + description.lineNumberEnd
       hash.lines[lineRange] = description.context
+
       sum += description.context
-      if description.context > max
-        max = description.context
+      max = description.context if description.context > max
 
     hash
   , {lines: {}}

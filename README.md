@@ -19,3 +19,8 @@ Generates a report of churn and complexity for `file1.coffee`, `file2.coffee`, a
 1. Commit your changes (`git commit -am 'Add some feature'`)
 1. Push to the branch (`git push origin my-new-feature`)
 1. Create new Pull Request
+
+## TODO
+
+Stub out fs read file to speed up CLI specs
+Add helper methods to clean up adding avg, max, sum to report hash

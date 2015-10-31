@@ -23,9 +23,9 @@ functionLength = (file) ->
       lineRange = description.lineNumber + "-" + description.lineNumberEnd
       length = description.lineNumberEnd - description.lineNumber
       hash.lines[lineRange] = length
+
       sum += length
-      if length > max
-        max = length
+      max = length if length > max
 
     hash
   , {lines: {}}
