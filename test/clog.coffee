@@ -85,3 +85,14 @@ describe "long function length", ->
 
   it "correctly penalizes", ->
     assert.equal(scores[file].gpa.toFixed(2), 2.79, "GPA")
+
+describe "files with syntax errors", ->
+  file = scores = null
+
+  beforeEach ->
+    file = fixturePath("invalid")
+    scores = JSON.parse clog.report [file]
+
+  it "skips token analysis", ->
+    assert.equal(scores[file].tokenComplexity, 0)
+    assert.equal(scores[file].tokenCount, 0)

@@ -36,9 +36,17 @@ files = (paths) ->
 analyze = (filePath) ->
   file = fs.readFileSync(filePath, "utf8")
 
-  fileTokens = tokens file,
-    literate: coffee.helpers.isLiterate(filePath)
+  try
+    fileTokens = tokens file,
+      literate: coffee.helpers.isLiterate(filePath)
+  catch err
+    fileTokens = []
+    throw(err) unless err instanceof SyntaxError
 
+  summarise(filePath, file, fileTokens)
+
+# Create summary for a file
+summarise = (filePath, file, fileTokens) ->
   summary =
     churn: churn(filePath)
     functionLength: functionLength(file)
@@ -60,6 +68,7 @@ report = (filePaths, opts = {}) ->
   , {}
 
   JSON.stringify(scores, null, opts.indentSpace)
+
 
 # Clog
 
