@@ -2,7 +2,7 @@
   "author": "Matt Diebolt",
   "name": "clog-analysis",
   "description": "Simple CoffeeScript static analysis for code quality metrics",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "main": "lib/clog.js",
   "repository": {
     "type": "git",
