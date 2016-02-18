@@ -44,7 +44,7 @@ describe "CLI", ->
   describe "reporting on directories", ->
     it "supports passing in a directory", ->
       output = cli
-        _: ["test"]
+        _: ["test/fixtures/nested"]
 
       assert.ok(output.length)
 
@@ -58,17 +58,16 @@ describe "CLI", ->
 
     it "supports passing in multiple files", ->
       report = cli
-        _: ["test/fixtures/nested_ifs.coffee", "source/rules.coffee"]
+        _: ["test/fixtures/nested_ifs.coffee", "source/metrics/letter_grade.coffee"]
 
       output = JSON.parse(report)
       assert.ok(output["test/fixtures/nested_ifs.coffee"].gpa?)
-      assert.ok(output["source/rules.coffee"].gpa?)
+      assert.ok(output["source/metrics/letter_grade.coffee"].gpa?)
 
     it "supports passing in a mix of directories and files", ->
       report = cli
-        _: ["source", "test/cli.coffee"]
+        _: ["test/fixtures/nested", "test/fixtures/case.coffee"]
 
       output = JSON.parse(report)
-      assert.ok(output["source/rules.coffee"].gpa?)
-      assert.ok(output["source/clog.coffee"].gpa?)
-      assert.ok(output["test/cli.coffee"].gpa?)
+      assert.ok(output["test/fixtures/nested/sum.coffee"].gpa?)
+      assert.ok(output["test/fixtures/case.coffee"].gpa?)
