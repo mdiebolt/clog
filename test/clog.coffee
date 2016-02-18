@@ -85,3 +85,14 @@ describe "long function length", ->
 
   it "correctly penalizes", ->
     assert.equal(scores[file].gpa.toFixed(2), 2.79, "GPA")
+
+describe "syntax errors", ->
+  file = scores = null
+
+  beforeEach ->
+    file = fixturePath("syntax_error")
+    scores = JSON.parse clog.report [file]
+
+  it "returns error information instead of analysis metrics", ->
+    assert.ok(scores[file].error)
+    assert.equal(scores[file].error, "SyntaxError: [stdin]:1:7: error: unexpected >")

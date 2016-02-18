@@ -9,7 +9,7 @@ letterGrade = require "./metrics/letter_grade"
 gpa = require "./metrics/gpa"
 
 coffee = require "coffee-script"
-{tokens} = coffee
+{tokens, compile} = coffee
 
 fs = require "fs"
 glob = require "glob"
@@ -36,6 +36,18 @@ files = (paths) ->
 analyze = (filePath) ->
   file = fs.readFileSync(filePath, "utf8")
 
+  summary = {}
+
+  try
+    # make sure the file is valid CoffeeScript before running analysis
+    compile file
+    summary = validFileSummary(filePath, file)
+  catch e
+    summary.error = "#{e.name}: #{e.stack.split("\n")[0]}"
+
+  summary
+
+validFileSummary = (filePath, file) ->
   fileTokens = tokens file,
     literate: coffee.helpers.isLiterate(filePath)
 
